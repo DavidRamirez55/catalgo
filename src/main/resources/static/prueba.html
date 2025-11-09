@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>TodoTiket - Administración de Eventos</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background-color: #fafafa; }
+        h1 { color: #2b2d42; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #2b2d42; color: white; }
+        button { padding: 6px 12px; margin: 2px; cursor: pointer; border-radius: 5px; border: none; }
+        .editar { background-color: #3a86ff; color: white; }
+        .eliminar { background-color: #ef233c; color: white; }
+    </style>
+</head>
+<body>
+<h1>🎫 Administración de Eventos</h1>
+
+<form id="form-evento">
+    <input type="hidden" id="id">
+    <input type="text" id="nombre" placeholder="Nombre del evento" required>
+    <input type="text" id="lugar" placeholder="Lugar" required>
+    <input type="date" id="fecha" required>
+    <button type="submit">Guardar</button>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Lugar</th>
+        <th>Fecha</th>
+        <th>Acciones</th>
+    </tr>
+    </thead>
+    <tbody id="tabla-eventos"></tbody>
+</table>
+
+<script>
+    const API_URL = '/api/eventos';
+
+    async function cargarEventos() {
+        const res = await fetch(API_URL);
+        const eventos = await res.json();
+        const tbody = document.getElementById('tabla-eventos');
+        tbody.innerHTML = '';
+        eventos.forEach(e => {
+            const fila = `
+          <tr>
+            <td>${e.id}</td>
+            <td>${e.nombre}</td>
+            <td>${e.lugar}</td>
+            <td>${e.fecha}</td>
+            <td>
+              <button class="editar" onclick="editarEvento(${e.id}, '${e.nombre}', '${e.lugar}', '${e.fecha}')">Editar</button>
+              <button class="eliminar" onclick="eliminarEvento(${e.id})">Eliminar</button>
+            </td>
+          </tr>`;
+            tbody.innerHTML += fila;
+        });
+    }
+
+    async function guardarEvento(e) {
+        e.preventDefault();
+        const id = document.getElementById('id').value;
+        const evento = {
+            nombre: document.getElementById('nombre').value,
+            lugar: document.getElementById('lugar').value,
+            fecha: document.getElementById('fecha').value
+        };
+        const metodo = id ? 'PUT' : 'POST';
+        const url = id ? `${API_URL}/${id}` : API_URL;
+        await fetch(url, {
+            method: metodo,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(evento)
+        });
+        document.getElementById('form-evento').reset();
+        cargarEventos();
+    }
+
+    async function eliminarEvento(id) {
+        if (confirm('¿Seguro que deseas eliminar este evento?')) {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            cargarEventos();
+        }
+    }
+
+    function editarEvento(id, nombre, lugar, fecha) {
+        document.getElementById('id').value = id;
+        document.getElementById('nombre').value = nombre;
+        document.getElementById('lugar').value = lugar;
+        document.getElementById('fecha').value = fecha;
+    }
+
+    document.getElementById('form-evento').addEventListener('submit', guardarEvento);
+    cargarEventos();
+</script>
+</body>
+</html>
